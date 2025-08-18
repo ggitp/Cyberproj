@@ -3,25 +3,35 @@ const { generateToken } = require("../utils/generateToken");
 const { hashPassword, comparePassword } = require("../utils/hashPassword");
 
 
-const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function normEmail(e) {
   return String(e || "").trim().toLowerCase();
 }
 function isNonEmptyString(s) {
   return typeof s === "string" && s.trim().length > 0;
 }
+function isValidEmail(email) {
+  if (!isNonEmptyString(email)) return false;
+  if (email.length > 254) return false;
+  const at = email.indexOf("@");
+  if (at <= 0 || at === email.length - 1) return false;
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  if (!local || !domain) return false;
+  if (domain.includes("..")) return false;
+  if (domain.indexOf(".") === -1) return false; // require at least one dot in domain
+  return true;
+}
 
 module.exports.registerUser = async (req, res) => {
   try {
     let { email, password, fullname } = req.body || {};
-
 
     if (!isNonEmptyString(fullname)) {
       req.flash("error", "Full name is required");
       return res.redirect("/");
     }
     email = normEmail(email);
-    if (!emailRe.test(email)) {
+    if (!isValidEmail(email)) {
       req.flash("error", "Invalid email");
       return res.redirect("/");
     }
@@ -37,9 +47,13 @@ module.exports.registerUser = async (req, res) => {
     }
 
     const hash = await hashPassword(password);
-    const user = await userModel.create({ email, password: hash, fullname: fullname.trim() });
+    const user = await userModel.create({
+      email,
+      password: hash,
+      fullname: fullname.trim(),
+    });
 
-    const token = generateToken(user); // has exp: '1h'
+    const token = generateToken(user); // exp: 1h in utils/generateToken.js
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -60,13 +74,8 @@ module.exports.loginUser = async (req, res) => {
   try {
     let { email, password } = req.body || {};
 
-    // ✅ validate & normalize BEFORE querying DB
     email = normEmail(email);
-    if (!emailRe.test(email)) {
-      req.flash("error", "Email or Password incorrect");
-      return res.redirect("/");
-    }
-    if (!isNonEmptyString(password)) {
+    if (!isValidEmail(email) || !isNonEmptyString(password)) {
       req.flash("error", "Email or Password incorrect");
       return res.redirect("/");
     }
@@ -83,7 +92,7 @@ module.exports.loginUser = async (req, res) => {
       return res.redirect("/");
     }
 
-    const token = generateToken(user); // has exp: '1h'
+    const token = generateToken(user); // exp: 1h
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
