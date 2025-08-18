@@ -4,62 +4,73 @@ const { hashPassword, comparePassword } = require("../utils/hashPassword");
 
 module.exports.registerUser = async (req, res) => {
   try {
-    let { email, password, fullname } = req.body;
+    const { email, password, fullname } = req.body;
 
-    let findUser = await userModel.findOne({ email: email });
-
-    if (findUser) {
+    const existing = await userModel.findOne({ email });
+    if (existing) {
       req.flash("error", "You already have an account, please login.");
       return res.redirect("/");
     }
 
-    let hash = await hashPassword(password);
+    const hash = await hashPassword(password);
+    const user = await userModel.create({ email, password: hash, fullname });
 
-    console.log(hash);
-
-    let user = await userModel.create({
-      email,
-      password: hash,
-      fullname,
+    const token = generateToken(user); // has exp: '1h'
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000, // 1h, align with JWT exp
     });
 
-    let token = generateToken(user);
-    res.cookie("token", token);
     req.flash("success", "User created successfully");
-    res.redirect("/shop");
+    return res.redirect("/shop");
   } catch (err) {
-    res.send(err.message);
+    console.error(err);
+    req.flash("error", "Something went wrong. Please try again.");
+    return res.redirect("/");
   }
 };
 
 module.exports.loginUser = async (req, res) => {
   try {
-    let { email, password } = req.body;
+    const { email, password } = req.body;
 
-    let user = await userModel.findOne({ email: email });
-
+    const user = await userModel.findOne({ email });
     if (!user) {
       req.flash("error", "Email or Password incorrect");
       return res.redirect("/");
     }
 
-    let result = await comparePassword(password, user.password);
-
-    if (result) {
-      let token = generateToken(user);
-      res.cookie("token", token);
-      res.redirect("/shop");
-    } else {
+    const ok = await comparePassword(password, user.password);
+    if (!ok) {
       req.flash("error", "Email or Password incorrect");
       return res.redirect("/");
     }
+
+    const token = generateToken(user); // has exp: '1h'
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 1000, // 1h
+    });
+
+    return res.redirect("/shop");
   } catch (err) {
-    res.send(err.message);
+    console.error(err);
+    req.flash("error", "Something went wrong. Please try again.");
+    return res.redirect("/");
   }
 };
 
 module.exports.logout = async (req, res) => {
-  res.cookie("token", "");
+  // Clear with matching flags so the browser actually removes it
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
   req.flash("success", "Logout Successful");
-  res.redirect("/");
+  return res.redirect("/");
 };

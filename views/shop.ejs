@@ -47,12 +47,19 @@
             <h3><%= product.name %></h3>
             <h4>₪ <%= product.price %></h4>
           </div>
-          <a
-            class="w-7 h-7 flex items-center justify-center rounded-full bg-white"
-            href="/addtocart/<%= product._id %>"
-          >
-            <i class="ri-add-line"></i>
-          </a>
+
+          <!-- CHANGED: link -> inline POST form, same styling on the button -->
+          <form action="/addtocart/<%= product._id %>" method="post" style="display:inline">
+            <button
+              type="submit"
+              class="w-7 h-7 flex items-center justify-center rounded-full bg-white"
+              title="Add to cart"
+            >
+              <i class="ri-add-line"></i>
+            </button>
+          </form>
+          <!-- /CHANGED -->
+
         </div>
       </div>
       <% }) %>
@@ -60,4 +67,3 @@
   </div>
 </div>
 <%- include('./partials/footer') %>
-

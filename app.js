@@ -14,11 +14,32 @@ require("dotenv").config();
 
 const db = require("./config/mongoose-connection");
 
+app.set("trust proxy", 1);
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
+app.use(
+  helmet({
+    contentSecurityPolicy: false
+  })
+);
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "https://cdn.tailwindcss.com"], // no trailing slash
+      "style-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      "img-src": ["'self'", "data:"], // needed for your data: product images
+      "font-src": ["'self'", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://fonts.gstatic.com"],
+      "connect-src": ["'self'"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"]
+    }
+  })
+);
 app.use(
   expressSession({
     resave: false,
@@ -30,17 +51,7 @@ app.use(helmet.frameguard({ action: 'deny' }));
 app.use(helmet.noSniff());
 app.disable('x-powered-by');
 
-app.use(
-  helmet.contentSecurityPolicy({
-    useDefaults: true,
-    directives: {
-      "script-src": ["'self'"],     // add domains if you load scripts/images from external sites
-      "img-src": ["'self'", "data:"],
-      "object-src": ["'none'"],
-      "base-uri": ["'self'"]
-    },
-  })
-);
+
 
 
 app.use(flash());
