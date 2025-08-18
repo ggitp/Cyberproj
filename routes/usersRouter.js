@@ -12,9 +12,9 @@ router.get("/", (req, res) => {
   res.send("hey it's working users");
 });
 
-router.post("/register", registerUser);
+router.post('/register', authLimiter, registerUser);
 
-router.post("/login", loginUser);
+router.post('/login',    authLimiter, loginUser);
 
 router.get("/logout", logout);
 

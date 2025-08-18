@@ -1,7 +1,6 @@
-<%- include('./partials/header') %> <% if(success.length>0){ %>
-<div
-  class="absolute top-5 left-1/2 -translate-x-1/2 -translate-y-1/2 p-3 rounded-md bg-blue-500"
->
+<%- include('./partials/header') %>
+<% if(success.length>0){ %>
+<div class="absolute top-5 left-1/2 -translate-x-1/2 -translate-y-1/2 p-3 rounded-md bg-blue-500">
   <span class="inline-block mt-1 mb-1 text-white"> <%= success %> </span>
 </div>
 <% } %>
@@ -31,35 +30,24 @@
     <div class="flex items-start gap-5">
       <% products.forEach(function(product){ %>
       <div class="w-60">
-        <div
-          class="w-full h-52 flex items-center justify-center bg-[<%= product.bgcolor %>]"
-        >
-          <img
-            class="h-[12rem]"
-            src="data:image/jpeg;base64,<%= product.image.toString('base64') %>"
-            alt="<%= product.name %>"
-          />
+        <div class="w-full h-52 flex items-center justify-center bg-[<%= product.bgcolor %>]">
+          <img class="h-[12rem]"
+               src="data:image/jpeg;base64,<%= product.image.toString('base64') %>"
+               alt="<%= product.name %>" />
         </div>
-        <div
-          class="flex justify-between bg-[<%= product.panelcolor %>] items-center px-4 py-4 text-[<%= product.textcolor %>]"
-        >
+        <div class="flex justify-between bg-[<%= product.panelcolor %>] items-center px-4 py-4 text-[<%= product.textcolor %>]">
           <div>
             <h3><%= product.name %></h3>
             <h4>₪ <%= product.price %></h4>
           </div>
-
-          <!-- CHANGED: link -> inline POST form, same styling on the button -->
           <form action="/addtocart/<%= product._id %>" method="post" style="display:inline">
-            <button
-              type="submit"
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit"
               class="w-7 h-7 flex items-center justify-center rounded-full bg-white"
-              title="Add to cart"
-            >
+              title="Add to cart">
               <i class="ri-add-line"></i>
             </button>
           </form>
-          <!-- /CHANGED -->
-
         </div>
       </div>
       <% }) %>

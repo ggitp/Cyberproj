@@ -4,6 +4,8 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const expressSession = require("express-session");
 const flash = require("connect-flash");
+const csurf = require('csurf');
+const mongoSanitize = require('express-mongo-sanitize');
 const adminsRouter = require("./routes/adminsRouter");
 const usersRouter = require("./routes/usersRouter");
 const productsRouter = require("./routes/productsRouter");
@@ -40,21 +42,52 @@ app.use(
     }
   })
 );
+
+app.use(helmet.frameguard({ action: 'deny' }));
+app.use(helmet.noSniff());
+app.disable('x-powered-by');
+app.use(mongoSanitize({ replaceWith: '_' }));
+
 app.use(
   expressSession({
     resave: false,
     saveUninitialized: false,
     secret: process.env.EXPRESS_SESSION_SECRET,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 1000, // 1h
+    },
   })
 );
-app.use(helmet.frameguard({ action: 'deny' }));
-app.use(helmet.noSniff());
-app.disable('x-powered-by');
-
-
 
 
 app.use(flash());
+
+app.use(
+  csurf({
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  })
+);
+
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    req.flash('error', 'Your session expired. Please try again.');
+    return res.redirect('back');
+  }
+  next(err);
+});
+
 
 app.use("/", indexRouter);
 app.use("/admins", adminsRouter);
