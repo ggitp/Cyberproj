@@ -23,18 +23,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cookieParser());
 app.use(
-  helmet({
-    contentSecurityPolicy: false
-  })
-);
-app.use(
   helmet.contentSecurityPolicy({
     useDefaults: true,
     directives: {
       "default-src": ["'self'"],
-      "script-src": ["'self'", "https://cdn.tailwindcss.com"], // no trailing slash
+      "script-src": ["'self'", "https://cdn.tailwindcss.com"],
       "style-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
-      "img-src": ["'self'", "data:"], // needed for your data: product images
+      "img-src": ["'self'", "data:"],
       "font-src": ["'self'", "https://cdn.jsdelivr.net", "https://unpkg.com", "https://fonts.gstatic.com"],
       "connect-src": ["'self'"],
       "object-src": ["'none'"],
