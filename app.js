@@ -8,6 +8,7 @@ const adminsRouter = require("./routes/adminsRouter");
 const usersRouter = require("./routes/usersRouter");
 const productsRouter = require("./routes/productsRouter");
 const indexRouter = require("./routes/indexRouter");
+const helmet = require('helmet');
 
 require("dotenv").config();
 
@@ -25,6 +26,22 @@ app.use(
     secret: process.env.EXPRESS_SESSION_SECRET,
   })
 );
+app.use(helmet.frameguard({ action: 'deny' }));
+app.use(helmet.noSniff());
+app.disable('x-powered-by');
+
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "script-src": ["'self'"],     // add domains if you load scripts/images from external sites
+      "img-src": ["'self'", "data:"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"]
+    },
+  })
+);
+
 
 app.use(flash());
 
